@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="WebGL 3D showcase — адаптивная заготовка с Three.js" />
+  <title>WebGL Showcase</title>
+
+  <!-- Шрифты Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Space+Mono:wght@400;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Стили -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!--
+    Import map — алиасы для ES-модулей Three.js.
+    Должен стоять ДО любых <script type="module">.
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three":          "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+      "three/addons/":  "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════
+       WebGL-канвас — фиксированный, позади всего контента.
+       z-index: -1 + body { background: transparent } позволяют
+       видеть канвас сквозь HTML-слои, при этом html { background }
+       задаёт цвет-подложку для прозрачных пикселей рендерера.
+  ═══════════════════════════════════════════════════════ -->
+  <canvas id="webgl" aria-hidden="true"></canvas>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Оверлей загрузки — скрывается после инициализации сцены
+  ═══════════════════════════════════════════════════════ -->
+  <div id="loader" role="status" aria-live="polite">
+    <div class="loader__ring"></div>
+    <span class="loader__text">Инициализация сцены…</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       Контентный слой — обычный HTML-скролл поверх 3D-сцены
+  ═══════════════════════════════════════════════════════ -->
+  <main id="content">
+
+    <!-- Секция 1: герой (нижний-левый угол) -->
+    <section class="section section--hero">
+      <div class="section__card">
+        <span class="section__label">01 · Intro</span>
+        <h1 class="section__title">
+          Architects<br>
+          <em>of Light</em>
+        </h1>
+        <p class="section__body">
+          Explore the dimension where code acquires form,
+          where data becomes geometry, and structure
+          emerges from the atmospheric void below.
+        </p>
+        <span class="scroll-hint" aria-label="Прокрутите вниз">↓ scroll</span>
+      </div>
+    </section>
+
+    <!-- Секция 2: по правому краю -->
+    <section class="section section--right">
+      <div class="section__card">
+        <span class="section__label">02 · Substance</span>
+        <h2 class="section__title">
+          Form Follows<br>
+          <em>Function</em>
+        </h2>
+        <p class="section__body">
+          Every vertex carries meaning. Every polygon tells a story.
+          The geometry you see is not random — it is the visible
+          expression of an underlying logic, made manifest in three
+          dimensions.
+        </p>
+      </div>
+    </section>
+
+    <!-- Секция 3: по центру с отступом сверху -->
+    <section class="section section--center">
+      <div class="section__card">
+        <span class="section__label">03 · Depth</span>
+        <h2 class="section__title">
+          Into<br>
+          <em>the Fog</em>
+        </h2>
+        <p class="section__body">
+          As depth increases, detail dissolves. Certainty gives way
+          to suggestion. What lies beyond the visible threshold
+          remains yours to imagine.
+        </p>
+        <a href="#" class="section__cta">↑ Begin again</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!--
+    GSAP + ScrollTrigger.
+    defer гарантирует: gsap → ScrollTrigger → main.js (module, тоже deferred)
+    выполняются строго по порядку документа.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+
+  <!-- Основной JS-модуль сцены -->
+  <script type="module" src="main.js"></script>
+
+</body>
+</html>
