@@ -44,10 +44,10 @@ const CONFIG = {
    * Добавляйте любое количество промежуточных точек.
    */
   cameraPath: [
-    { t: 0,    pos: new THREE.Vector3(0,   0, 9), look: new THREE.Vector3(0, 0, 0) },
-    { t: 0.5,  pos: new THREE.Vector3(0,  -7, 15), look: new THREE.Vector3(0, -5, 0) },
+    { t: 0,    pos: new THREE.Vector3(10,   0, 9), look: new THREE.Vector3(0, -1, 0) },
+    { t: 0.5,  pos: new THREE.Vector3(0,  -7, 15), look: new THREE.Vector3(0, -6, 0) },
     { t: 0.75,    pos: new THREE.Vector3(0, -15, 7), look: new THREE.Vector3(0, -15, 0) },
-    { t: 1,    pos: new THREE.Vector3(0, -23, 12), look: new THREE.Vector3(0, -25, 0) }
+    { t: 1,    pos: new THREE.Vector3(-5, -20, 9), look: new THREE.Vector3(-1, -26, 0) }
   ],
 
   /**
@@ -77,8 +77,16 @@ const CONFIG = {
     /** Контровой источник, даёт холодный циановый ободок */
     rim: {
       color:     0x7dd4c8,
-      intensity: 0.75,
+      intensity: 0,
       pos: new THREE.Vector3(-6, 1, -4),
+    },
+    /** Точечный источник над el_central, движется вместе с ним */
+    orbit: {
+      color:     0xffffff,   // тёплый белый
+      intensity: 40,
+      distance:  10,         // радиус затухания (ед. сцены)
+      decay:     1,          // физически корректное затухание (1/r²)
+      offsetY:   -3.0,        // высота над центром меша
     },
   },
 
@@ -99,12 +107,12 @@ const CONFIG = {
 
   // ── Вода ─────────────────────────────────────────────────────
   water: {
-    color:           0x000000,   // тёмно-синий оттенок воды
-    roughness:       0.002,       // почти зеркальная поверхность
-    metalness:       0.01,
+    color:           0x111111,   // тёмная зеркальная поверхность
+    roughness:       0.0,        // идеальное зеркало (0 = чёткое, >0 = матовее)
+    metalness:       1.0,        // металл даёт 100% отражение без Fresnel-потерь
     opacity:         1,
-    envMapIntensity: 0.1,        // интенсивность отражения сцены
-    normalScale:     0.025,       // высота рябей нормал-карты
+    envMapIntensity: 1.0,        // при metalness=1 не нужно завышать
+    normalScale:     0.08,      // едва заметная рябь — почти зеркало
     flowSpeed:       0.03,       // скорость течения UV-анимации
     cubeResolution:  1024,        // разрешение кубической карты отражений
   },
@@ -125,7 +133,8 @@ const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+// false — не перезаписывать CSS canvas-а inline-стилем; размер берём из CSS (100svh)
+renderer.setSize(canvas.clientWidth, canvas.clientHeight, false);
 renderer.outputColorSpace    = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled   = true;
 renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
@@ -140,7 +149,7 @@ scene.fog = new THREE.Fog(CONFIG.fog.color, CONFIG.fog.near, CONFIG.fog.far);
 // ── Перспективная камера ──────────────────────────────────────
 const camera = new THREE.PerspectiveCamera(
   CONFIG.camera.fov,
-  window.innerWidth / window.innerHeight,
+  canvas.clientWidth / canvas.clientHeight,
   CONFIG.camera.near,
   CONFIG.camera.far,
 );
@@ -162,8 +171,8 @@ const dirLight = new THREE.DirectionalLight(
   CONFIG.lights.directional.intensity,
 );
 dirLight.position.copy(CONFIG.lights.directional.pos);
-dirLight.castShadow          = true;
-dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.castShadow          = false;
+dirLight.shadow.mapSize.set(512, 512);
 dirLight.shadow.camera.near  = 0.5;
 dirLight.shadow.camera.far   = 20;
 scene.add(dirLight);
@@ -174,6 +183,18 @@ const rimLight = new THREE.DirectionalLight(
 );
 rimLight.position.copy(CONFIG.lights.rim.pos);
 scene.add(rimLight);
+
+const orbitLight = new THREE.PointLight(
+  CONFIG.lights.orbit.color,
+  CONFIG.lights.orbit.intensity,
+  CONFIG.lights.orbit.distance,
+  CONFIG.lights.orbit.decay,
+);
+orbitLight.castShadow           = false;
+orbitLight.shadow.mapSize.set(512, 512);
+orbitLight.shadow.camera.near   = 0.1;
+orbitLight.shadow.camera.far    = CONFIG.lights.orbit.distance;
+scene.add(orbitLight);
 
 // ── Декоративная сетка пола ───────────────────────────────────
 // const grid = new THREE.GridHelper(30, 30, 0x0d1428, 0x080e1c);
@@ -209,7 +230,7 @@ function createFallback() {
     geo,
     new THREE.MeshStandardMaterial({ color, metalness, roughness }),
   );
-  solidMesh.castShadow = true;
+  solidMesh.castShadow = false;
   group.add(solidMesh);
 
   // Проволочный каркас поверх (создаёт ощущение объёма)
@@ -237,7 +258,7 @@ function createFallback() {
   });
 
   scene.add(group);
-  console.info('[WebGL] Модель не найдена — используется примитивная заглушка.');
+  //console.info('[WebGL] Модель не найдена — используется примитивная заглушка.');
   return group;
 }
 
@@ -260,18 +281,27 @@ const meshMap     = {};
 const materialMap = {}; // { materialName: THREE.Material } — все материалы модели по имени
 
 // ── Вода ─────────────────────────────────────────────────────
-let waterMesh       = null;
-let waterObj        = null;
-let waterCubeCamera = null;
-let waterNormalTex  = null;
+let waterMesh      = null;
+let waterObj       = null;
+let waterNormalTex = null;
+let reflectionRT   = null;   // WebGLRenderTarget для planar reflection
+let reflectCamera  = null;   // зеркальная камера (отражение по Y)
+let waterMirrorMat = null;   // ShaderMaterial воды
+let waterSurfaceY  = 0;      // Y-координата поверхности воды
+
+const _reflectPos     = new THREE.Vector3();
+const _reflectDir     = new THREE.Vector3();
+const _reflectTgt     = new THREE.Vector3();
+const _textureMatrix  = new THREE.Matrix4(); // world → UV reflection RT
 
 // el_central: меш/объект с именем 'el_central' в модели.
 // Его позиция смещается вместе с камерой при скролле.
 let elCentral         = null;
 const elCentralOrigin = new THREE.Vector3();
-// Клоны материалов для эксклюзивного управления opacity (не затрагивают другие меши)
-let elCentralMat1     = null;  // клон mat_sphere_1
-let elCentralMatWhite = null;  // клон mat_white
+// Dual-mesh crossfade: два экземпляра меша с разными материалами
+let elCentralMat1  = null;  // клон mat_sphere_1 (opacity 1 → 0)
+let elCentralMat2  = null;  // клон mat_sphere_2 (opacity 0 → 1)
+let elCentralClone = null;  // клон меша — носитель mat_sphere_2
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║                    ТЕКСТУРА ВОДЫ                            ║
@@ -377,52 +407,92 @@ function setupWater() {
   waterMesh = meshMap['water'];
   if (!waterMesh) { console.warn('[WebGL] "water" не найден в модели.'); return; }
 
-  // Центр меша для CubeCamera
-  const bbox   = new THREE.Box3().setFromObject(waterMesh);
-  const center = new THREE.Vector3();
-  bbox.getCenter(center);
-
-  // CubeRenderTarget — HDR, чтобы яркие источники не клипились
-  const cubeRT = new THREE.WebGLCubeRenderTarget(CONFIG.water.cubeResolution, {
-    type:            THREE.HalfFloatType,
-    generateMipmaps: true,
-    minFilter:       THREE.LinearMipmapLinearFilter,
-  });
-  // near=0.01 — иначе объекты вплотную к воде режутся near-plane'ом в cube render
-  waterCubeCamera = new THREE.CubeCamera(0.01, 500, cubeRT);
-  waterCubeCamera.position.copy(center);
-  scene.add(waterCubeCamera);
+  // matrixWorld не актуальна до первого рендера — принудительно обновляем
+  scene.updateMatrixWorld(true);
+  const bbox = new THREE.Box3().setFromObject(waterMesh);
+  waterSurfaceY = bbox.max.y;
 
   // Нормал-карта бесшовной ряби (Perlin FBM)
   waterNormalTex = generateWaterNormal();
 
-  // MeshPhysicalMaterial: тёмное зеркало
-  // metalness=0 → диэлектрик, Fresnel ~4% на нормали
-  // envMapIntensity=15 → компенсирует малый Fresnel → отражения видны
-  // roughness=0.04 → чуть рассеяный lobe — мягкое отражение вместо точечного блика
-  const mat = new THREE.MeshPhysicalMaterial({
-    color:           new THREE.Color(CONFIG.water.color),
-    roughness:       0.04,
-    metalness:       0.0,
-    envMap:          cubeRT.texture,
-    envMapIntensity: 15.0,
-    normalMap:       waterNormalTex,
-    normalScale:     new THREE.Vector2(
-      CONFIG.water.normalScale * 15,
-      CONFIG.water.normalScale * 15,
-    ),
+  // ── Planar reflection render target ──────────────────────────
+  const dpr = Math.min(window.devicePixelRatio, 2);
+  const cw  = canvas.clientWidth;
+  const ch  = canvas.clientHeight;
+  reflectionRT = new THREE.WebGLRenderTarget(
+    cw * dpr,
+    ch * dpr,
+    { type: THREE.HalfFloatType, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter },
+  );
+
+  // Зеркальная камера: та же проекция, что у главной, позиция зеркалится по Y
+  reflectCamera = new THREE.PerspectiveCamera(
+    CONFIG.camera.fov,
+    cw / ch,
+    CONFIG.camera.near,
+    CONFIG.camera.far,
+  );
+
+  // ── ShaderMaterial: плоское зеркало + рябь ───────────────────
+  // Texture matrix переводит world-space позицию фрагмента воды в UV [0,1]
+  // пространства reflection RT (как в Three.js Reflector). Обновляется каждый кадр.
+  waterMirrorMat = new THREE.ShaderMaterial({
+    uniforms: {
+      uReflection:    { value: reflectionRT.texture },
+      uTextureMatrix: { value: _textureMatrix },
+      uNormalMap:     { value: waterNormalTex },
+      uNormalScale:   { value: CONFIG.water.normalScale },
+      uColor:         { value: new THREE.Color(CONFIG.water.color) },
+      uTime:          { value: 0.0 },
+    },
+    vertexShader: /* glsl */`
+      uniform mat4 uTextureMatrix;
+      varying vec4 vReflectCoord;
+      varying vec2 vUv;
+      void main() {
+        vUv          = uv;
+        vec4 worldPos   = modelMatrix * vec4(position, 1.0);
+        vReflectCoord   = uTextureMatrix * worldPos;
+        gl_Position     = projectionMatrix * viewMatrix * worldPos;
+      }
+    `,
+    fragmentShader: /* glsl */`
+      uniform sampler2D uReflection;
+      uniform sampler2D uNormalMap;
+      uniform float     uNormalScale;
+      uniform vec3      uColor;
+      uniform float     uTime;
+      varying vec4 vReflectCoord;
+      varying vec2 vUv;
+
+      void main() {
+        // Два слоя нормал-карты с разными скоростями → органичная рябь
+        vec2 uv1 = vUv * 5.0 + vec2( uTime * 0.028,  uTime * 0.017);
+        vec2 uv2 = vUv * 5.0 + vec2(-uTime * 0.022,  uTime * 0.031);
+        vec2 n1  = texture2D(uNormalMap, uv1).rg * 2.0 - 1.0;
+        vec2 n2  = texture2D(uNormalMap, uv2).rg * 2.0 - 1.0;
+        vec2 ripple = (n1 + n2) * uNormalScale;
+
+        // Перспективно-корректный UV из texture matrix (world → RT UV [0,1])
+        vec2 reflectUV = vReflectCoord.xy / vReflectCoord.w;
+        reflectUV     += ripple;
+        reflectUV      = clamp(reflectUV, 0.001, 0.999);
+
+        vec3 refl = texture2D(uReflection, reflectUV).rgb;
+        gl_FragColor  = vec4(mix(uColor, refl, 0.95), 1.0);
+      }
+    `,
   });
 
-  // Заменяем материал оригинального меша
   const prev = waterMesh.material;
   if (Array.isArray(prev)) prev.forEach(m => m.dispose && m.dispose());
   else if (prev && prev.dispose) prev.dispose();
-  waterMesh.material = mat;
+  waterMesh.material = waterMirrorMat;
   waterMesh.visible  = true;
 
   waterObj = waterMesh;
 
-  console.info('[WebGL] CubeCamera вода применена к "water", center.y =', center.y.toFixed(2));
+  //console.info('[WebGL] Planar reflection вода применена к "water", surfaceY =', waterSurfaceY.toFixed(2));
 }
 
 const gltfLoader = new GLTFLoader();
@@ -440,8 +510,8 @@ gltfLoader.load(
       gltf.scene.traverse((child) => {
         if (!child.isMesh) return;
 
-        child.castShadow    = true;
-        child.receiveShadow = true;
+        child.castShadow    = false;
+        child.receiveShadow = false;
 
         if (child.name) meshMap[child.name] = child;
 
@@ -452,30 +522,41 @@ gltfLoader.load(
         });
       });
 
-      console.info('[WebGL] Объекты модели:',   Object.keys(meshMap));
-      console.info('[WebGL] Материалы модели:', Object.keys(materialMap));
+      //console.info('[WebGL] Объекты модели:',   Object.keys(meshMap));
+      //console.info('[WebGL] Материалы модели:', Object.keys(materialMap));
 
       // Привязываем el_central к скроллу (если объект присутствует в модели)
       if (meshMap['el_central']) {
         elCentral = meshMap['el_central'];
         elCentralOrigin.copy(elCentral.position);
 
-        // Клонируем материалы — opacity будем менять только на клонах,
-        // чтобы не затронуть другие меши, использующие те же материалы
-        if (materialMap['mat_sphere_1']) {
-          elCentralMat1             = materialMap['mat_sphere_1'].clone();
+        // Lerp-материал: клон mat_sphere_1, свойства которого плавно сдвигаются к mat_sphere_2
+        const m1 = materialMap['mat_sphere_1'];
+        const m2 = materialMap['mat_sphere_2'];
+        if (m1 && m2) {
+          // mat_sphere_1: стартовый, opacity идёт 1 → 0
+          elCentralMat1             = m1.clone();
           elCentralMat1.transparent = true;
           elCentralMat1.opacity     = 1;
-        }
-        if (materialMap['mat_white']) {
-          elCentralMatWhite             = materialMap['mat_white'].clone();
-          elCentralMatWhite.transparent = true;
-          elCentralMatWhite.opacity     = 0;
-        }
-        // Назначаем стартовый материал
-        if (elCentralMat1) elCentral.material = elCentralMat1;
+          elCentralMat1.depthWrite  = true;
 
-        console.info('[WebGL] el_central найден, материалы клонированы.');
+          // mat_sphere_2: финальный, opacity идёт 0 → 1
+          elCentralMat2             = m2.clone();
+          elCentralMat2.transparent = true;
+          elCentralMat2.opacity     = 0;
+          elCentralMat2.depthWrite  = false;
+
+          elCentral.material = elCentralMat1;
+
+          // Клон меша в том же parent-пространстве — несёт mat_sphere_2
+          elCentralClone          = elCentral.clone();
+          elCentralClone.material = elCentralMat2;
+          elCentral.parent.add(elCentralClone);
+
+          //console.info('[WebGL] el_central: dual-mesh crossfade готов (mat_sphere_1 → mat_sphere_2).');
+        } else {
+          console.warn('[WebGL] ❌ mat_sphere_1 или mat_sphere_2 не найден. Доступные:', Object.keys(materialMap));
+        }
       } else {
         console.warn('[WebGL] Объект el_central не найден в модели.');
       }
@@ -483,10 +564,10 @@ gltfLoader.load(
       if (gltf.animations.length > 0) {
         mixer = new THREE.AnimationMixer(gltf.scene);
         gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
-        console.info(`[WebGL] Запущено анимаций: ${gltf.animations.length}`);
+        //console.info(`[WebGL] Запущено анимаций: ${gltf.animations.length}`);
       }
 
-      console.info('[WebGL] Модель загружена:', CONFIG.modelPath);
+      //console.info('[WebGL] Модель загружена:', CONFIG.modelPath);
     } catch (err) {
       console.error('[WebGL] Ошибка при обработке модели:', err);
       sceneObject = createFallback();
@@ -541,15 +622,23 @@ if (CONFIG.enableOrbitControls) {
 // ║              СКРОЛЛ И ДВИЖЕНИЕ КАМЕРЫ                       ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-let scrollTarget  = 0;  // целевой прогресс  [0, 1]
-let scrollCurrent = 0;  // сглаженный прогресс [0, 1]
-
 /** Нормализованный прогресс скролла: 0 = верх, 1 = низ */
 function getScrollProgress() {
-  const scrolled   = window.scrollY || document.documentElement.scrollTop;
-  const maxScroll  = document.documentElement.scrollHeight - window.innerHeight;
+  const scrolled  = window.scrollY || document.documentElement.scrollTop;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
   return maxScroll > 0 ? Math.min(Math.max(scrolled / maxScroll, 0), 1) : 0;
 }
+
+// Инициализируем из реальной позиции — браузер восстанавливает скролл после обновления,
+// и старт с 0 блокировал бы прокрутку наверх.
+let scrollTarget  = getScrollProgress();
+let scrollCurrent = scrollTarget;
+
+// Страховка: после полной загрузки DOM/CSS пересчитываем scrollHeight и синхронизируем.
+window.addEventListener('load', () => {
+  scrollTarget  = getScrollProgress();
+  scrollCurrent = scrollTarget;
+}, { once: true });
 
 // Подключение GSAP ScrollTrigger (если библиотека загружена)
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
@@ -561,7 +650,7 @@ if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
     onUpdate: (self) => { scrollTarget = self.progress; },
   });
 
-  console.info('[WebGL] GSAP ScrollTrigger подключён.');
+  //console.info('[WebGL] GSAP ScrollTrigger подключён.');
 } else {
   // Запасной вариант: нативный listener (работает везде, в т.ч. без CDN)
   window.addEventListener('scroll', () => {
@@ -640,14 +729,25 @@ const _elCentralPos = new THREE.Vector3();
 // ╚══════════════════════════════════════════════════════════════╝
 
 function onResize() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
+  // canvas.clientWidth/Height следуют за CSS (100svh), а не за window.innerHeight.
+  // Это делает обработчик устойчивым к появлению/скрытию адресной строки мобильного
+  // браузера: CSS-значение не меняется → Three.js не перестраивается → нет лагов.
+  // При повороте устройства svh пересчитывается, resize срабатывает корректно.
+  const w   = canvas.clientWidth;
+  const h   = canvas.clientHeight;
+  const dpr = Math.min(window.devicePixelRatio, 2);
 
   camera.aspect = w / h;
   camera.updateProjectionMatrix();
 
-  renderer.setSize(w, h);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(w, h, false); // false — не трогать CSS-размер, только буфер
+  renderer.setPixelRatio(dpr);
+
+  if (reflectionRT) reflectionRT.setSize(w * dpr, h * dpr);
+  if (reflectCamera) {
+    reflectCamera.aspect = w / h;
+    reflectCamera.updateProjectionMatrix();
+  }
 }
 
 window.addEventListener('resize', onResize, { passive: true });
@@ -716,30 +816,38 @@ function tick() {
       elCentral.position.copy(_elCentralPos);
     }
 
-    // ── Плавная смена материала через прозрачность ───────────
-    // Y = -10  → t = 0 → полностью mat_sphere_1
-    // Y = -11  → t = 1 → полностью mat_white
-    // Диапазон разбит пополам: первая половина — fade-out mat_sphere_1,
-    // вторая — fade-in mat_white (краткий момент полной прозрачности в середине)
-    if (elCentralMat1 && elCentralMatWhite) {
+    // ── Точечный свет над el_central ─────────────────────────
+    orbitLight.position.set(
+      elCentral.position.x,
+      elCentral.position.y + CONFIG.lights.orbit.offsetY,
+      elCentral.position.z,
+    );
+
+    // ── Dual-mesh crossfade mat_sphere_1 → mat_sphere_2 ─────
+    // Y = -10 → t = 0 → полностью mat_sphere_1
+    // Y = -11 → t = 1 → полностью mat_sphere_2
+    if (elCentralMat1 && elCentralMat2 && elCentralClone) {
       const t = Math.max(0, Math.min(1, (-elCentral.position.y - 10) / 1));
 
+      // Клон всегда совпадает с оригиналом по трансформу
+      elCentralClone.position.copy(elCentral.position);
+      elCentralClone.rotation.copy(elCentral.rotation);
+      elCentralClone.scale.copy(elCentral.scale);
+
       if (t <= 0) {
-        elCentral.material        = elCentralMat1;
-        elCentralMat1.opacity     = 1;
-        elCentralMat1.transparent = false;
+        // Полностью mat_sphere_1 — непрозрачный, пишет в depth
+        elCentralMat1.transparent = false; elCentralMat1.opacity = 1; elCentralMat1.depthWrite = true;
+        elCentralMat2.transparent = true;  elCentralMat2.opacity = 0; elCentralMat2.depthWrite = false;
       } else if (t >= 1) {
-        elCentral.material            = elCentralMatWhite;
-        elCentralMatWhite.opacity     = 1;
-        elCentralMatWhite.transparent = false;
-      } else if (t < 0.5) {
-        elCentral.material        = elCentralMat1;
-        elCentralMat1.transparent = true;
-        elCentralMat1.opacity     = 1 - t * 2;          // 1 → 0
+        // Полностью mat_sphere_2
+        elCentralMat1.transparent = true;  elCentralMat1.opacity = 0; elCentralMat1.depthWrite = false;
+        elCentralMat2.transparent = false; elCentralMat2.opacity = 1; elCentralMat2.depthWrite = true;
       } else {
-        elCentral.material            = elCentralMatWhite;
-        elCentralMatWhite.transparent = true;
-        elCentralMatWhite.opacity     = (t - 0.5) * 2;  // 0 → 1
+        // Crossfade: оба прозрачны, opacity дополняют друг друга
+        elCentralMat1.transparent = true; elCentralMat1.opacity = 1 - t; elCentralMat1.depthWrite = false;
+        elCentralMat2.transparent = true; elCentralMat2.opacity = t;     elCentralMat2.depthWrite = false;
+        elCentral.renderOrder      = 0;
+        elCentralClone.renderOrder = 1;
       }
     }
   }
@@ -748,13 +856,15 @@ function tick() {
   if (_debugFrame % DEBUG_INTERVAL === 0) {
     const p = camera.position;
     const l = _lookAt;
-    console.log(
-      `[cam pos]    x:${p.x.toFixed(3)}  y:${p.y.toFixed(3)}  z:${p.z.toFixed(3)}\n` +
-      `[cam lookAt] x:${l.x.toFixed(3)}  y:${l.y.toFixed(3)}  z:${l.z.toFixed(3)}\n` +
-      (elCentral
-        ? `[el_central] x:${elCentral.position.x.toFixed(3)}  y:${elCentral.position.y.toFixed(3)}  z:${elCentral.position.z.toFixed(3)}`
-        : '[el_central] не найден в сцене'),
-    );
+    const elY   = elCentral ? elCentral.position.y : null;
+    const lerpT = elY !== null ? Math.max(0, Math.min(1, (-elY - 10) / 1)) : null;
+    // console.log(
+    //   `[cam pos]    x:${p.x.toFixed(3)}  y:${p.y.toFixed(3)}  z:${p.z.toFixed(3)}\n` +
+    //   `[cam lookAt] x:${l.x.toFixed(3)}  y:${l.y.toFixed(3)}  z:${l.z.toFixed(3)}\n` +
+    //   (elCentral
+    //     ? `[el_central] y:${elY.toFixed(3)}  crossfade_t:${lerpT.toFixed(3)}  clone:${!!elCentralClone}`
+    //     : '[el_central] не найден в сцене'),
+    // );
   }
 
   // ── Автоанимация заглушки (только при отсутствии GLTF-анимаций) ──
@@ -766,26 +876,45 @@ function tick() {
   // ── Обновление OrbitControls ─────────────────────────────────
   if (controls) controls.update();
 
-  // ── Вода: анимация нормал-карты + обновление CubeCamera ────────
-  if (waterObj && waterCubeCamera) {
-    // Смещение UV нормал-карты в двух направлениях → органичная рябь без паттерна
-    waterNormalTex.offset.x += delta * CONFIG.water.flowSpeed * 0.28;
-    waterNormalTex.offset.y += delta * CONFIG.water.flowSpeed * 0.17;
+  // ── Вода: planar reflection ──────────────────────────────────
+  if (waterObj && reflectCamera && reflectionRT && waterMirrorMat) {
+    // Зеркалим главную камеру относительно плоскости воды (Y = waterSurfaceY)
+    _reflectPos.copy(camera.position);
+    _reflectPos.y = 2 * waterSurfaceY - camera.position.y;
+    reflectCamera.position.copy(_reflectPos);
 
-    // Cube render target должен содержать линейный HDR — иначе IBL считается неверно.
-    // Отключаем tonemapping + gamma до рендера, восстанавливаем после.
+    camera.getWorldDirection(_reflectDir);
+    _reflectDir.y = -_reflectDir.y;
+    _reflectTgt.copy(_reflectPos).addScaledVector(_reflectDir, 1);
+    reflectCamera.lookAt(_reflectTgt);
+
+    // Копируем проекционную матрицу (не пересчитываем FOV каждый кадр)
+    reflectCamera.projectionMatrix.copy(camera.projectionMatrix);
+    reflectCamera.updateMatrixWorld();
+
+    // Texture matrix: world-space → UV [0,1] в reflection RT.
+    // Эквивалентно: bias(0.5) * proj * view⁻¹
+    _textureMatrix.set(
+      0.5, 0.0, 0.0, 0.5,
+      0.0, 0.5, 0.0, 0.5,
+      0.0, 0.0, 0.5, 0.5,
+      0.0, 0.0, 0.0, 1.0,
+    );
+    _textureMatrix.multiply(reflectCamera.projectionMatrix);
+    _textureMatrix.multiply(reflectCamera.matrixWorldInverse);
+
+    // Рендерим сцену без воды → reflection RT
     waterObj.visible = false;
-    const savedFog   = scene.fog;
-    const savedTone  = renderer.toneMapping;
-    const savedCS    = renderer.outputColorSpace;
-    scene.fog                  = null;
-    renderer.toneMapping       = THREE.NoToneMapping;
-    renderer.outputColorSpace  = THREE.LinearSRGBColorSpace;
-    waterCubeCamera.update(renderer, scene);
-    scene.fog                  = savedFog;
-    renderer.toneMapping       = savedTone;
-    renderer.outputColorSpace  = savedCS;
+    const savedFog = scene.fog;
+    scene.fog = null;
+    renderer.setRenderTarget(reflectionRT);
+    renderer.render(scene, reflectCamera);
+    renderer.setRenderTarget(null);
+    scene.fog        = savedFog;
     waterObj.visible = true;
+
+    // Передаём время в шейдер для анимации ряби
+    waterMirrorMat.uniforms.uTime.value = elapsed;
   }
 
   // ── Рендеринг кадра ──────────────────────────────────────────

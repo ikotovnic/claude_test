@@ -11,8 +11,8 @@
   --c-border:    rgba(125, 212, 200, 0.22);
 
   /* Шрифты */
-  --f-display: 'Cormorant Garamond', Georgia, serif;
-  --f-mono:    'Space Mono', 'Courier New', monospace;
+  --f-display: "Montserrat", sans-serif;
+  --f-mono:    "Montserrat", sans-serif;
 
   /* Адаптивные отступы */
   --gap-xs: clamp(0.5rem,  1vw,  0.75rem);
@@ -24,7 +24,7 @@
   /* Размеры текста */
   --fs-label: clamp(0.58rem, 1.1vw, 0.7rem);
   --fs-body:  clamp(0.78rem, 1.4vw, 0.9rem);
-  --fs-title: clamp(2.8rem,  7vw,  5.8rem);
+  --fs-title: clamp(2.8rem,  4vw,  5.8rem);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -67,7 +67,8 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100vh;    /* fallback для старых браузеров */
+  height: 100lvh;   /* большой viewport — canvas всегда на весь экран, строка браузера перекрывает его сверху */
   z-index: -1;
   display: block;
 }
@@ -160,8 +161,8 @@ body {
   position: relative;
 
   /* Размытие фона (glass-morphism) */
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  /* backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); */
 
   /* Анимация появления при прокрутке (IntersectionObserver из JS) */
   opacity: 0;
@@ -235,7 +236,7 @@ body {
 }
 
 .section__title em {
-  font-style: italic;
+  font-style: normal;
   color: var(--c-accent);
   display: block;
 }
@@ -289,8 +290,12 @@ body {
 
 /* Планшеты и ниже — все карточки прижимаются влево */
 @media (max-width: 768px) {
-  .section--right,
+  .section--left,
   .section--center {
+    justify-content: flex-start;
+    align-items: flex-start;
+  }
+  .section--right{
     justify-content: flex-start;
     align-items: flex-end;
   }
@@ -306,8 +311,8 @@ body {
   .section__card {
     max-width: 100%;
     /* Снижаем интенсивность blur ради производительности */
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px); */
   }
 }
 
