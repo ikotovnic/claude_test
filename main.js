@@ -64,7 +64,7 @@ const CONFIG = {
 
   /** Коэффициент LERP сглаживания движения камеры.
    *  0.01 = очень плавно, 0.15 = резко. */
-  scrollLerp: 0.055,
+  scrollLerp: 1,
 
   // ── Освещение ────────────────────────────────────────────────
   lights: {
@@ -622,10 +622,15 @@ if (CONFIG.enableOrbitControls) {
 // ║              СКРОЛЛ И ДВИЖЕНИЕ КАМЕРЫ                       ║
 // ╚══════════════════════════════════════════════════════════════╝
 
-/** Нормализованный прогресс скролла: 0 = верх, 1 = низ */
+/** Нормализованный прогресс скролла: 0 = верх, 1 = низ.
+ *  Считается только по высоте #content, чтобы steps-section
+ *  не влияла на длину 3D-анимации. */
 function getScrollProgress() {
   const scrolled  = window.scrollY || document.documentElement.scrollTop;
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const content   = document.getElementById('content');
+  const maxScroll = content
+    ? content.offsetHeight - window.innerHeight
+    : document.documentElement.scrollHeight - window.innerHeight;
   return maxScroll > 0 ? Math.min(Math.max(scrolled / maxScroll, 0), 1) : 0;
 }
 
@@ -640,35 +645,59 @@ window.addEventListener('load', () => {
   scrollCurrent = scrollTarget;
 }, { once: true });
 
+// ╔══════════════════════════════════════════════════════════════╗
+// ║                   LENIS SMOOTH SCROLL                        ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+let lenis = null;
+let _lenisRafMode = false; // true → tick() вызывает lenis.raf(); false → GSAP ticker
+
+if (typeof Lenis !== 'undefined') {
+  lenis = new Lenis({
+    duration: 1.2,
+    easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    smoothTouch: false, // iOS: лучше оставить нативный momentum
+  });
+}
+
 // Подключение GSAP ScrollTrigger (если библиотека загружена)
 if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 
   ScrollTrigger.create({
-    start: 'top top',
-    end:   'bottom bottom',
+    trigger: '#content',
+    start:   'top top',
+    end:     'bottom bottom',
     onUpdate: (self) => { scrollTarget = self.progress; },
   });
 
-  //console.info('[WebGL] GSAP ScrollTrigger подключён.');
+  // Lenis → GSAP ticker: Lenis двигается в такт с GSAP и обновляет ScrollTrigger
+  if (lenis) {
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => lenis.raf(time * 1000));
+    gsap.ticker.lagSmoothing(0);
+  }
 } else {
-  // Запасной вариант: нативный listener (работает везде, в т.ч. без CDN)
+  // Запасной вариант без GSAP: нативный listener + Lenis через tick()
   window.addEventListener('scroll', () => {
     scrollTarget = getScrollProgress();
   }, { passive: true });
 
-  // Поддержка свайпа на сенсорных устройствах
-  let touchStartY = 0;
-  window.addEventListener('touchstart', (e) => {
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-  window.addEventListener('touchmove', (e) => {
-    const delta = touchStartY - e.touches[0].clientY;
-    window.scrollBy(0, delta * 0.5);
-    touchStartY = e.touches[0].clientY;
-  }, { passive: true });
-
-  console.info('[WebGL] Нативный scroll-listener активен (GSAP не найден).');
+  if (lenis) {
+    // Lenis fire-and-forget через нативный scroll — tick() передаёт время
+    _lenisRafMode = true;
+  } else {
+    // Поддержка свайпа только если Lenis не установлен (Lenis обрабатывает touch сам)
+    let touchStartY = 0;
+    window.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', (e) => {
+      const delta = touchStartY - e.touches[0].clientY;
+      window.scrollBy(0, delta * 0.5);
+      touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+  }
 }
 
 // Переиспользуемые векторы — не создаём объекты в горячем пути рендера
@@ -789,8 +818,11 @@ const clock = new THREE.Clock();
 let _debugFrame = 0;
 const DEBUG_INTERVAL = 30;
 
-function tick() {
+function tick(time) {
   requestAnimationFrame(tick);
+
+  // Lenis RAF-режим: когда GSAP недоступен, двигаем Lenis отсюда
+  if (_lenisRafMode && lenis) lenis.raf(time);
 
   const delta   = clock.getDelta();
   const elapsed = clock.elapsedTime;

@@ -39,7 +39,7 @@
 /* html задаёт цвет-подложку под прозрачными пикселями канваса */
 html {
   background-color: var(--c-bg);
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth убран — Lenis заменяет его */
 }
 
 /* body прозрачен — иначе перекроет фиксированный канвас с z-index:-1 */
@@ -128,7 +128,7 @@ body {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding: var(--gap-xl) clamp(1.25rem, 6vw, 5rem);
+  padding: var(--gap-xl) clamp(1.25rem, 2vw, 5rem);
 }
 
 /* Первая секция — карточка у нижнего-левого угла */
@@ -226,7 +226,7 @@ body {
 
 /* Заголовок */
 .section__title {
-  font-family: var(--f-display);
+  font-family: Prosto One;
   font-size: var(--fs-title);
   font-weight: 300;
   line-height: 1.0;
@@ -328,4 +328,213 @@ body {
   .loader__ring {
     animation: none;
   }
+}
+
+/* Буфер между 3D-зоной и блоком шагов — один чистый viewport */
+#webgl-buffer {
+  height: 100vh;
+  position: relative;
+  z-index: 1;
+  /* прозрачный — canvas виден за ним */
+}
+
+/* ═══════════════════════════════════════════════════════════
+   СЕКЦИЯ ШАГОВ — steps_blocks_rm8_R
+   Точное соответствие Steps.module.scss / MobileSteps.module.scss
+═══════════════════════════════════════════════════════════ */
+.steps-section {
+  background-color: #001e34;
+  color: #ffffff;
+  position: relative;
+  z-index: 1;
+  font-family: 'Prosto One', serif;
+  padding-top: 100px;
+  /* padding-bottom covers the steps cascade that overflows below block 2's image;
+     clamp keeps it proportional on wide screens while reasonable on narrow ones */
+  padding-bottom: clamp(120px, calc(320 / 1286 * 100vw + 80px), 520px);
+}
+
+.steps_blocks_rm8_R {
+  position: relative;
+}
+
+/* ── Блок (обёртка видео / изображения) ──────────────────── */
+.steps-block {
+  position: relative;
+}
+
+/* Второй блок: space is now provided by section's padding-bottom, not child margin
+   (child margins escape through parents without BFC, leaving background uncovered) */
+
+/* Медиа-фон: полная ширина, высота по пропорции */
+.steps-bg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ── Строка шагов — абсолютное позиционирование ─────────── */
+.steps-row {
+  position: absolute;
+  display: flex;
+  padding-left:  calc(40 / 1286 * 100vw);
+  padding-right: calc(40 / 1286 * 100vw);
+  z-index: 1;
+  will-change: transform;
+}
+
+/* Блок 1: шаги вылезают на ~11.66vw ниже края видео */
+.steps-row--first {
+  bottom: calc(-150 / 1286 * 100vw);
+  gap:    calc(50  / 1920 * 100vw);
+}
+
+/* Блок 2: те же параметры, другой gap и ограничение ширины шага */
+.steps-row--second {
+  bottom: calc(-150 / 1286 * 100vw);
+  gap:    calc(70  / 1920 * 100vw);
+}
+
+.steps-row--second .step {
+  max-width: calc(650 / 1920 * 100vw);
+}
+
+/* Фиксированные отступы при ≤1600px */
+@media (max-width: 1600px) {
+  .steps-row {
+    padding-left:  40px;
+    padding-right: 40px;
+  }
+}
+
+/* ── Отдельный шаг ────────────────────────────────────────── */
+.step {
+  position: relative;
+  display: flex;
+  gap: 20px;
+}
+
+/* Каскадный вертикальный сдвиг — блок 1 */
+.step--s2 { margin-top: calc(120 / 1920 * 100vw); }
+.step--s3 { margin-top: calc(275 / 1920 * 100vw); }
+
+/* Каскадный вертикальный сдвиг — блок 2 */
+.step--t1 { margin-top: calc(200 / 1286 * 100vw); }
+.step--t2 { margin-top: calc(100 / 1286 * 100vw); }
+
+/* ── Номер шага ───────────────────────────────────────────── */
+.step-id {
+  font-size: 66px;
+  margin-top: calc(30 / 1920 * 100vw);
+  font-family: 'Prosto One', serif;
+  color: #ffffff;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+  .step-id { font-size: calc(60 / 1280 * 100vw); }
+}
+
+/* ── Контент шага ─────────────────────────────────────────── */
+.step-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.step-title {
+  text-transform: uppercase;
+  line-height: 110%;
+  font-size: calc(20 / 1286 * 100vw);
+  font-weight: 500;
+  white-space: nowrap;
+  font-family: 'Prosto One', serif;
+  color: #ffffff;
+}
+
+.step-info p {
+  font-size: 14px;
+  line-height: 20px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+  color: #ffffff;
+  margin-top: 8px;
+}
+
+/* ── Анимация появления (global.scss → fadein-scroll) ────── */
+.fadein-scroll {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 2s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 2s cubic-bezier(0.16, 1, 0.3, 1),
+              filter 2s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform, filter;
+  filter: blur(25px);
+  transition-delay: 0.2s;
+}
+
+.fadein-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* ── Мобильная версия ≤1024px ─────────────────────────────── */
+@media (max-width: 1024px) {
+  .steps-section {
+    padding-top: 40px;
+    padding-bottom: 40px;
+  }
+
+  /* Убираем абсолютное позиционирование — строки шагов текут
+     обычным потоком ПОСЛЕ изображения/видео внутри блока */
+  .steps-row--first,
+  .steps-row--second {
+    position: static;
+    flex-direction: column;
+    gap: 32px;
+    padding: 28px 20px;
+    width: 100%;
+  }
+
+  .steps-row--second .step { max-width: none; }
+
+  /* Каждый шаг: номер слева, контент справа (как на десктопе),
+     но без каскадных отступов */
+  .step { gap: 12px; }
+
+  .step--s2, .step--s3,
+  .step--t1, .step--t2 { margin-top: 0; }
+
+  /* Паддинг-bottom больше не нужен — шаги в потоке */
+  .steps-block,
+  .steps-block:first-child,
+  .steps-block--second { padding-bottom: 0; }
+
+  .step-id {
+    font-size: calc(40 / 390 * 100vw);
+    margin-top: 0;
+  }
+
+  .step-title {
+    font-size: calc(18 / 390 * 100vw);
+    line-height: 120%;
+    white-space: normal;
+    margin-bottom: calc(10 / 390 * 100vw);
+  }
+
+  .step-info p {
+    font-size: calc(12 / 390 * 100vw);
+    line-height: calc(20 / 390 * 100vw);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fadein-scroll {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+  [data-parallax] { transform: none !important; }
 }

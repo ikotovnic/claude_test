@@ -15,7 +15,7 @@
   />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Dosis:wght@200..800&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Prosto+One&family=Dosis:wght@200..800&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
   <!-- Стили -->
   <link rel="stylesheet" href="style.css" />
 
@@ -72,7 +72,7 @@
 
     <!-- Секция 2: по правому краю -->
     <section class="section section--right">
-      <div class="section__card">
+      <div class="section__card fadein-scroll">
         <!-- <span class="section__label">02 · Substance</span> -->
         <h2 class="section__title">
           Убираем лишнее, <br>
@@ -94,30 +94,99 @@
 
     <!-- Секция 3: по центру с отступом сверху -->
     <section class="section section--left">
-      <div class="section__card">
+      <div class="section__card fadein-scroll">
         <!-- <span class="section__label">03 · Depth</span> -->
         <h2 class="section__title">
           Лучший результат — <br>
           <em>за один шаг</em>
         </h2>
-        <!-- <p class="section__body">
-          As depth increases, detail dissolves. Certainty gives way
-          to suggestion. What lies beyond the visible threshold
-          remains yours to imagine.
-        </p> -->
-        <!-- <a href="#" class="section__cta">↑ Begin again</a> -->
       </div>
     </section>
 
   </main>
+
+  <!-- Буфер: один viewport чистого canvas после 3D-секций,
+       чтобы steps-section не была видна одновременно с content -->
+  
+
+  <!-- ═══════════════════════════════════════════════════════════
+       Блок шагов — steps_blocks_rm8_R
+       Структура и стили по Steps.js / Steps.module.scss с ddq.ru
+  ═══════════════════════════════════════════════════════════ -->
+  <section class="steps-section">
+    <div class="steps_blocks_rm8_R">
+
+      <!-- Блок 1: видео-фон, шаги 01–03 -->
+      <div class="steps-block">
+        <video class="steps-bg fadein-scroll" id="steps-video"
+               autoplay muted loop playsinline webkit-playsinline preload="metadata">
+          <source src="coffee.mp4" type="video/mp4">
+        </video>
+        <div class="steps-row steps-row--first" data-parallax>
+          <div class="step fadein-scroll">
+            <span class="step-id">01</span>
+            <div class="step-info">
+              <h3 class="step-title">Первая встреча и <br>погружение в ваш <br>мир</h3>
+              <p>Все начинается с живого разговора. Мы задаем вопросы: зачем вам аудит? Что болит в бизнесе? Расскажите о них клиентам, интересующимся сайтом. Вы делитесь данными (аналитика, отзывы, метрики). Мы слушаем, фиксируем боли и цели.</p>
+            </div>
+          </div>
+          <div class="step step--s2 fadein-scroll">
+            <span class="step-id">02</span>
+            <div class="step-info">
+              <h3 class="step-title">Подготовка <br>комментариев и <br>анализ <br>контекста</h3>
+              <p>После встречи мы готовим персональные комментарии. Это краткий обзор: ваши сильные стороны, первые инсайты среди конкурентов. Мы изучаем ЦА (портреты, боли, привычки), анализируем 5–10 топ-конкурентов (их UX, сильные/слабые метрики).</p>
+            </div>
+          </div>
+          <div class="step step--s3 fadein-scroll">
+            <span class="step-id">03</span>
+            <div class="step-info">
+              <h3 class="step-title">Глубокий анализ<br>целей сайта</h3>
+              <p>Переходим в среду аудита (этап 2 методики). Изучаем ваши данные (Яндекс Метрика, тепловые карты, сеансы), интерфейс и путь пользователя. Находим «узкие горлышки»: где улучшить аудиторию? Что мешает удобству? Тестируем ключевые ресурсы (покупка, регистрация, поиск).</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Блок 2: second.jpg, шаги 06–05–04 (порядок как в оригинале) -->
+      <div class="steps-block steps-block--second">
+        <img class="steps-bg fadein-scroll" src="second.jpg" alt="">
+        <div class="steps-row steps-row--second" data-parallax>
+          <div class="step step--t1 fadein-scroll">
+            <span class="step-id">06</span>
+            <div class="step-info">
+              <h3 class="step-title">Идентификация<br>болей и «горячих<br>зон»</h3>
+              <p>Детальный разбор: тепловые карты покажут, клиенты куда «не кликают». Мы фиксируем проблемы по шкале приоритетов (критически/срочно/опционально).</p>
+            </div>
+          </div>
+          <div class="step step--t2 fadein-scroll">
+            <span class="step-id">05</span>
+            <div class="step-info">
+              <h3 class="step-title">Генерация идей<br>для изменений</h3>
+              <p>Этап 3 методологии — креатив на данных. Предлагаем идеи: от микроулучшений (кнопки, навигация) до редизайн-сценариев. Каждый пункт с обоснованием, примерами.<br><br>Визуализируем в Figma: скриншоты «до/после».</p>
+            </div>
+          </div>
+          <div class="step fadein-scroll">
+            <span class="step-id">04</span>
+            <div class="step-info">
+              <h3 class="step-title">Финальный<br>отчет и план<br>действий</h3>
+              <p>Компактный отчет: краткое описание для вас, детальный анализ для команды.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
 
   <!--
     GSAP + ScrollTrigger.
     defer гарантирует: gsap → ScrollTrigger → main.js (module, тоже deferred)
     выполняются строго по порядку документа.
   -->
+  <script src="https://cdn.jsdelivr.net/npm/lenis@1.1.18/dist/lenis.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js" defer></script>
+  <script src="steps-anim.js" defer></script>
 
   <!-- Основной JS-модуль сцены -->
   <script type="module" src="main.js"></script>

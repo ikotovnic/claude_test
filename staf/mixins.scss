@@ -1,0 +1,33 @@
+@function calcVW($px, $width: 1280) {
+	@return calc(1vw / ($width / 100) * $px);
+}
+
+@mixin vp--680 {
+	@media (max-width: 680px) {
+		@content;
+	}
+}
+
+@mixin vp--1024 {
+	@media (max-width: 1024px) {
+		@content;
+	}
+}
+
+@mixin vp--1280 {
+	@media (max-width: 1280px) {
+		@content;
+	}
+}
+
+@mixin vp--1440 {
+	@media (max-width: 1440px) {
+		@content;
+	}
+}
+
+@mixin vp--1600 {
+	@media (max-width: 1600px) {
+		@content;
+	}
+}

@@ -1,0 +1,440 @@
+@import './variables.scss';
+@import './fonts.scss';
+
+* {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+button,
+a {
+	position: relative;
+	cursor: url('../assets/icons/cursor-pointer.svg'), auto !important;
+
+	&::before {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		right: 0;
+		width: calc(100% + calcVW(17));
+		height: calc(100% + calcVW(17));
+		z-index: 1;
+
+		@include vp--1280 {
+			width: calc(100% + 17px);
+			height: calc(100% + 17px);
+		}
+
+		@include vp--1024 {
+			width: 100%;
+			height: 100%;
+		}
+	}
+}
+
+.cursor-pointer {
+	cursor: url('../assets/icons/cursor-pointer.svg'), auto !important;
+}
+
+.cursor-swipe {
+	cursor: url('../assets/icons/cursor-swipe.svg'), auto !important;
+}
+
+.cursor-play {
+	cursor: url('../assets/icons/cursor-play.svg'), auto !important;
+}
+
+.cursor-close {
+	cursor: url('../assets/icons/cursor-close.svg'), auto !important;
+}
+
+.cursor-scroll {
+	cursor: url('../assets/icons/cursor-scroll.svg'), auto !important;
+}
+
+.cursor-next {
+	cursor: url('../assets/icons/cursor-next.svg'), auto !important;
+}
+
+.cursor-prev {
+	cursor: url('../assets/icons/cursor-prev.svg'), auto !important;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+body {
+	width: 100vw;
+	overflow-x: hidden;
+	font-family: $font-f-montserrat;
+	color: $color-main-dark;
+	font-style: normal;
+	font-weight: 400;
+	font-size: calcVW(12);
+	line-height: calcVW(16);
+	cursor: url('../assets/icons/cursor-scroll.svg'), auto;
+
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	@include vp--1280 {
+		font-size: 12px;
+		line-height: 20px;
+	}
+}
+
+p,
+li {
+	margin-bottom: calcVW(8);
+
+	@include vp--1280 {
+		margin-bottom: 8px;
+	}
+}
+
+ul,
+ol {
+	padding-left: calcVW(14);
+
+	@include vp--1280 {
+		margin-bottom: 14px;
+	}
+}
+
+a {
+	color: $color-default-black;
+	text-decoration: none;
+}
+
+img,
+video {
+	display: block;
+	max-width: 100%;
+	height: auto;
+}
+
+address {
+	font-style: normal;
+}
+
+.swiper-scrollbar-drag {
+	background-color: #d9d9d9 !important;
+}
+
+.overlink {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 1;
+}
+
+.privacy-table td {
+	height: 100px;
+}
+
+/* Portfolio стили для VSH и VSHSite */
+h2 {
+	line-height: 1;
+	font-size: 32px;
+}
+
+/* Контейнер для всего контента */
+.portfolio-container {
+	max-width: 100%;
+	margin: 0 auto;
+	background: #ffffff;
+	font-family: montserrat;
+}
+
+/* Общие стили для блоков */
+.portfolio-block {
+	width: 100%;
+	position: relative;
+	background: #fff;
+}
+
+/* Класс для анимации появления при скролле */
+.fadein-scroll {
+	opacity: 0;
+	transform: translateY(40px);
+	transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1), 
+				transform 1s cubic-bezier(0.16, 1, 0.3, 1),
+				filter 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	will-change: opacity, transform, filter;
+	filter: blur(25px);
+}
+
+.fadein-scroll.visible {
+	opacity: 1;
+	transform: translateY(0);
+	filter: blur(0);
+}
+
+/* Усиление плавности перехода */
+.fadein-scroll {
+	transition-delay: 0.1s;
+}
+
+/* Изображения */
+img.portfolio-image {
+	width: 100%;
+	height: auto;
+	display: block;
+	opacity: 0;
+	transition: opacity 0.5s ease;
+}
+
+img.portfolio-image.loaded {
+	opacity: 1;
+}
+
+/* Видео блоки */
+.video-block {
+	position: relative;
+	background: #111;
+}
+
+video.portfolio-video {
+	width: 100%;
+	height: auto;
+	display: block;
+	cursor: pointer;
+}
+
+/* Кнопка воспроизведения для видео с id="element" */
+.video-play-button {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 80px;
+	height: 80px;
+	background: rgba(0, 0, 0, 0.7);
+	border-radius: 50%;
+	border: 2px solid white;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.3s ease;
+	opacity: 1;
+	z-index: 10;
+
+	&:hover {
+		background: rgba(255, 255, 255, 0.9);
+		transform: translate(-50%, -50%) scale(1.05);
+	}
+
+	&.playing {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	&::after {
+		content: "";
+		width: 0;
+		height: 0;
+		border-style: solid;
+		border-width: 15px 0 15px 26px;
+		border-color: transparent transparent transparent white;
+		margin-left: 5px;
+	}
+
+	&:hover::after {
+		border-color: transparent transparent transparent black;
+	}
+}
+
+/* Отступ */
+.spacer-block {
+	height: 50px;
+}
+
+/* Текст на картинке */
+.text-overlay-block {
+	position: relative;
+}
+
+.text-overlay-content {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: white;
+	text-align: center;
+	padding: 20px;
+	z-index: 2;
+}
+
+.overlay-text {
+	font-size: 24px;
+	line-height: 1.4;
+	max-width: 800px;
+	text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+}
+
+/* Два блока в ряд */
+.two-column-block {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0px;
+
+	.column {
+		flex: 1 1 calc(50% - 10px);
+		min-width: 300px;
+		position: relative;
+		overflow: hidden;
+	}
+
+	.column-link {
+		display: block;
+		width: 100%;
+		height: 100%;
+		text-decoration: none;
+		color: inherit;
+		position: relative;
+
+		&::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0);
+			transition: background-color 0.3s ease;
+			z-index: 1;
+			pointer-events: none;
+		}
+
+		&:hover::before {
+			background: rgba(0, 0, 0, 0.3);
+		}
+
+		&:hover img {
+			opacity: 1;
+		}
+	}
+
+	.column img {
+		width: 100%;
+		height: auto;
+		display: block;
+		transition: opacity 0.3s ease;
+	}
+
+	.text-overlay-content {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		padding: 5vw;
+		display: flex;
+		align-items: center;
+		justify-content: flex-start;
+		color: white;
+		text-align: left;
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	.overlay-text {
+		font-size: clamp(16px, 1.7vw, 10vw);
+		line-height: 1;
+		max-width: 50%;
+		text-shadow: none;
+		margin: 0;
+		padding: 0;
+		font-weight: 400;
+	}
+
+	.text-overlay-content.centered {
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+	}
+
+	.text-overlay-content.right-aligned {
+		align-items: flex-start;
+		justify-content: flex-end;
+		text-align: right;
+	}
+
+	@media (max-width: 768px) {
+		.column {
+			flex: 1 1 100%;
+		}
+		
+		.overlay-text {
+			font-size: 18px;
+			max-width: 80%;
+		}
+	}
+}
+
+/* Overlap блок */
+.overlap-block {
+	margin-top: -8vw;
+	margin-left: 5%;
+	margin-right: 5%;
+	width: 90%;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	position: relative;
+
+	@media (max-width: 768px) {
+		margin-top: -5vw;
+	}
+}
+
+/* Блок с текстом слева и видео справа */
+.text-video-block {
+	display: flex;
+	align-items: center;
+	gap: 5%;
+	margin-bottom: 100px;
+
+	.text-side {
+		flex: 1;
+		padding-left: 5%;
+	}
+
+	.video-side {
+		flex: 1;
+		padding-right: 5%;
+	}
+
+	.text-content {
+		font-family: 'Montserrat', sans-serif;
+		gap: 20px;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.video-container {
+		width: 100%;
+	}
+
+	@media (max-width: 768px) {
+		flex-direction: column;
+		gap: 30px;
+
+		.text-side,
+		.video-side {
+			padding: 0 5%;
+			width: 100%;
+		}
+	}
+}

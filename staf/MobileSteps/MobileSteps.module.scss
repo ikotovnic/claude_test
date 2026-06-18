@@ -1,0 +1,116 @@
+@import '@/styles/variables.scss';
+@import '@/styles/mixins.scss';
+
+.collapsibleBlocks {
+    transition: all 0.5s ease-in-out;
+    overflow: hidden;
+    
+    &.collapsed {
+        max-height: calcVW(100, 390);
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    &.expanded {
+        max-height: auto;
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+.block {
+    position: relative;
+
+    &.third {
+        padding-top: calcVW(50, 390);
+    }
+}
+
+.block {
+    width: 100%;
+    padding-bottom: calcVW(450, 390);
+
+    &:first-child {
+        padding-bottom: calcVW(350, 390);
+    }
+
+    &:nth-child(2) {
+        padding-bottom: calcVW(500, 390);
+    }
+
+    &.second {
+        padding-bottom: calcVW(400, 390)!important;
+    }
+
+    &.third {
+        padding-bottom: calcVW(400, 390)!important;
+    }
+
+    &.fourth {
+        padding-bottom: calcVW(400, 390)!important; 
+    }
+
+    &.five {
+        padding-bottom: calcVW(400, 390)!important; 
+    }
+
+    &.six {
+        padding-bottom: calcVW(400, 390)!important;  
+    }
+}
+
+.steps {
+    position: absolute;
+    bottom: 0;
+    display: flex;
+    gap: calcVW(50, 1920);
+    z-index: 1;
+    padding-left: 20px;
+    padding-right: 20px;
+    
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    gap: calcVW(45, 360);
+
+    p {
+        font-size: calcVW(12, 390);
+        line-height: calcVW(20, 390);
+        font-family: $font-f-montserrat;
+        font-weight: 400;
+    }
+}
+
+.id {
+    font-size: calcVW(40, 390);
+}
+
+.title {
+        text-transform: uppercase;
+        line-height: 120%;
+        font-size: calcVW(18, 390);
+        font-weight: 500;
+        white-space: nowrap;
+        margin-bottom: calcVW(10, 390);
+}
+
+.button {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    padding: calcVW(30, 390);
+    background: rgba(242, 210, 72, 1);
+    border-radius: calcVW(70, 390);
+    -webkit-box-shadow: 4px -2px 69px 36px rgba(242, 210, 72, 0.3);
+    -moz-box-shadow: 4px -2px 69px 36px rgba(242, 210, 72, 0.3);
+    box-shadow: 4px -2px 69px 36px rgba(242, 210, 72, 0.3);
+    z-index: 1;
+    font-size: calcVW(16, 390);
+    line-height: 100%;
+}
